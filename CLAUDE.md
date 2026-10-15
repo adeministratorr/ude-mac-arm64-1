@@ -1031,6 +1031,35 @@ Blast radius yalnız PDF dışa aktarımı; diğer kaydetme/imza yolları dokunu
 `lo.a:(Ljava/io/OutputStream;Z)V` + `iconst_1` çağırdığı görüldü; GUI testi (değişiklik
 yap → doğrudan PDF → son hâl gelmeli) kullanıcıya bırakıldı.
 
+## Büyük UDF açılış donması: bayt-bayt okuma (BUFREAD=1, 2026-10)
+
+JFR (açılış profili) ile bulundu: belgenin disk bayt önbelleği `common.ac`
+(`ByteArrayInputStream` türevi; PDFFRESH'teki `ac` alanının sınıfı) kendini
+`ac.a(InputStream)` ile doldurur — **`InputStream.read()` BAYT BAYT döngüsü**.
+`gui.lo.k()` (+ `lo` içinde 5 çağrı yeri daha) bunu ham, TAMPONSUZ
+`FileInputStream` ile çağırır → her bayt bir `read(2)` sistem çağrısı, **EDT'de**
+(pencere gösterimi / belge açılışı). Ölçüm (Zulu 11): 717 KB = ~600 ms, 10 MB =
+~9-11 s donma (resimli büyük UDF'ler); tamponlu: 2 ms / 41 ms.
+**Çözüm** (`scripts/macos-bufread/BufReadPatch.java`, `apply_bufread`): `ac.a(InputStream)`
+başına insertBefore — `$1` null değilse ve zaten `BufferedInputStream` /
+`ByteArrayInputStream` değilse `new BufferedInputStream($1, 65536)`. Tek merkezî
+nokta tüm çağrı yerlerini kapsar. `ByteArrayInputStream` muafiyeti orijinal
+`instanceof ac` kısa yolunu korur; null koruması orijinal erken `return`'ü korur
+(sarılırsa NPE IOException catch'inden kaçardı). Metot EOF'a kadar okur → önden
+okuma çağıranın akışından bayt çalmaz; kapatma çağıranın orijinal akışında kalır.
+İdempotans: metotta `new BufferedInputStream` varsa atlanır. Test:
+`tests/BufReadAcTest.java` (bayt eşitliği + süre; yamasız jar'a karşı da koşar).
+Doğrulama deseni: `JAVA_TOOL_OPTIONS='-Duser.home=<~/.uki kopyalı geçici ev>
+-XX:StartFlightRecording=duration=12s,settings=profile,filename=x.jfr'` ile doğrudan
+binary → `jfr print --events jdk.NativeMethodSample` içinde `common.ac.a` yığını
+kalmamalı (yamasızda 717 KB `isimsiz.UDF` ≈27 örnek ≈0,55 s EDT).
+Doğrulandı (5.4.21): açılışta `ac.a` NativeMethodSample 27→0; 15 MB resimli UDF
+`lo.c(FileInputStream)` ile yüklenip önbellekli kaydedilince content.xml orijinalle
+BİREBİR, taze kayıt→yeniden yükleme→kayıt kararlı (attach-probe). Kalan: döngü hâlâ
+Java tarafında bayt-bayt (`BufferedInputStream.read()` çağrısı) — 40 MB'ta ~0,2 s/geçiş;
+gerekirse gövde toplu okumayla değiştirilebilir. Büyük belge yüklemesinin asıl kalan
+maliyeti XML ayrıştırma (`common.d.u.a`), bu yamanın kapsamı dışı.
+
 ## "Resim Ekle" sessiz başarısızlığı + sayfayı taşan görsel (IMGFIX=1, 2026-08)
 
 Kullanıcı şikâyeti: "resim ekle dediğimde seçtiğim resmi eklemiyor" — dosya seçiliyor,

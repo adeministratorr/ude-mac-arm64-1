@@ -49,6 +49,7 @@ CARET_SRC="$SCRIPT_DIR/macos-caret"     # metin imleci temiz 1px çizim yaması
 PDFFRESH_SRC="$SCRIPT_DIR/macos-pdffresh" # PDF dışa aktarımı canlı belgeden taze serialize (bayat önbellek düzeltmesi)
 LINESPACING_SRC="$SCRIPT_DIR/macos-linespacing" # native satır aralığı menüsüne 1.5 ekleyen yama
 IMGFIX_SRC="$SCRIPT_DIR/macos-imagefix" # okunamayan görselde uyarı + eklenen görseli sayfaya sığdırma
+BUFREAD_SRC="$SCRIPT_DIR/macos-bufread" # belge bayt önbelleği (common.ac) tamponlu okuma — büyük UDF açılış donması
 FOP_SUP="/System/Library/Fonts/Supplemental"   # macOS Arial/Times New Roman (tam Unicode)
 ICONS="${ICONS:-1}"           # 1=açık (varsayılan; modern ikon override + HiDPI yükleyici yaması) | 0=kapalı
 FOPFONTS="${FOPFONTS:-1}"     # 1=açık (varsayılan; PDF Türkçe harf düzeltmesi) | 0=kapalı
@@ -66,6 +67,7 @@ CARETFIX="${CARETFIX:-1}" # 1=açık (varsayılan; metin imleci temiz 1px çizim
 PDFFRESH="${PDFFRESH:-1}" # 1=açık (varsayılan; "PDF Olarak Kaydet" canlı belgeden taze serialize — "önce Kaydet" gereksinimi kalkar) | 0=kapalı
 LINESPACING="${LINESPACING:-1}" # 1=açık (varsayılan; Giriş>Paragraf satır aralığı menüsüne 1.5 eklenir — satıcı unutmuş) | 0=kapalı
 IMGFIX="${IMGFIX:-1}" # 1=açık (varsayılan; okunamayan görselde Türkçe uyarı + eklenen görsel sayfaya sığar) | 0=kapalı
+BUFREAD="${BUFREAD:-1}" # 1=açık (varsayılan; büyük UDF açılışında bayt-bayt okuma donması giderilir) | 0=kapalı
 
 APP_NAME="Uyap Doküman Editörü"     # görünen ad
 APP="$BUILD/$APP_NAME.app"
@@ -587,6 +589,27 @@ apply_caretfix() {  # $1=JAR — patch_jar içinden çağrılır
 	c_ok "[caret] temiz 1px imleç yaması uygulandı."
 }
 
+apply_bufread() {  # $1=JAR — patch_jar içinden çağrılır
+	local JAR="$1"
+	[ "$BUFREAD" = "1" ] || return 0
+	c_info "[bufread] belge bayt önbelleği tamponlu okuma yaması (büyük UDF açılış donması)…"
+	local jr jc jvs
+	jr="$(java17)"  || { c_warn "[bufread] 17+ java yok, yama atlandı."; return 0; }
+	jc="$(javac17)" || { c_warn "[bufread] 17+ javac yok, yama atlandı."; return 0; }
+	jvs="$(icon_deps)"   # Javassist (ortak)
+	rm -rf "$BUILD/_bufreadpatch"; mkdir -p "$BUILD/_bufreadpatch/out"
+	"$jc" --release 11 -cp "$jvs" -d "$BUILD/_bufreadpatch" "$BUFREAD_SRC/BufReadPatch.java" \
+		|| { c_warn "[bufread] BufReadPatch derlenemedi; yama atlandı."; return 0; }
+	"$jr" -cp "$BUILD/_bufreadpatch:$jvs" BufReadPatch "$JAR" "$BUILD/_bufreadpatch/out" \
+		|| die "[bufread] tamponlu okuma yaması uygulanamadı (UDE sürümü değişmiş olabilir)."
+	if [ -d "$BUILD/_bufreadpatch/out/tr" ]; then
+		( cd "$BUILD/_bufreadpatch/out" && zip -q -r "$JAR" tr )
+		c_ok "[bufread] tamponlu okuma yaması uygulandı."
+	else
+		c_ok "[bufread] zaten yamalı, atlandı."
+	fi
+}
+
 apply_pdffresh() {  # $1=JAR — patch_jar içinden çağrılır
 	local JAR="$1"
 	[ "$PDFFRESH" = "1" ] || return 0
@@ -958,6 +981,7 @@ patch_jar() {
 	apply_filedialog "$JAR"
 	apply_caretfix "$JAR"
 	apply_pdffresh "$JAR"
+	apply_bufread "$JAR"
 	apply_linespacing "$JAR"
 	apply_imagefull "$JAR"
 	apply_imagefix "$JAR"
@@ -1176,6 +1200,7 @@ case "${1:-all}" in
 	download) download ;; deps) deps ;; icon-deps) icon_deps ;; shim) shim ;; textkeys) textkeys ;; zoom) zoom ;; lookagent) lookagent ;; patch) patch_jar ;;
 	fop-fonts) apply_fop_fonts "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	caret-fix) CARETFIX=1 apply_caretfix "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
+	buf-read) BUFREAD=1 apply_bufread "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	pdf-fresh) PDFFRESH=1 apply_pdffresh "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	line-spacing) LINESPACING=1 apply_linespacing "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	image-full) IMGFULL=1 apply_imagefull "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
