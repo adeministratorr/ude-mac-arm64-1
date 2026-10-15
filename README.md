@@ -297,6 +297,19 @@ Resmî paket x86_64. Native arm64 için:
     taşırması bu sayede önlenir. Antetler `~/Library/Application Support/UDE/Antetler`
     altında saklanır.
 
+21. **Büyük belgelerde donmayan açılış** (`BUFREAD=1`, varsayılan açık) → UDE, bir belgeyi
+    açarken (ve her açılışta) dosyayı tamponsuz, **bayt bayt** okuyordu: her bayt için ayrı
+    bir sistem çağrısı, üstelik arayüz iş parçacığında. Bu yüzden resimli büyük belgelerde
+    uygulama saniyelerce donuyordu. Javassist yamasıyla okuma tamponlu yapılır → 15 MB'lık
+    bir UDF ile açılış **15,1 sn'den ~2,5 sn'ye** iner (dosyasız açılışa birkaç onda bir
+    saniye yakın).
+
+22. **Kelime Denetimi kapalıyken sözlük yüklenmez** (`ZEMBEREKLAZY=1`, varsayılan açık) →
+    UDE, Kelime Denetimi kapalı olsa bile her açılışta Türkçe sözlüğü (Zemberek) yüklüyordu
+    (~0,4 sn ve kalıcı ~8 MB bellek). Artık sözlük yalnızca Kelime Denetimi açıkken, ihtiyaç
+    olduğunda yüklenir; seçeneği çalışırken açmak eskisi gibi çalışır. Ayrıca sağ tık yazım
+    önerileri her seferinde sözlüğü sıfırdan kurmak yerine ortak sözlüğü kullanır.
+
 > Not: macOS codesign, `.app` adındaki Türkçe karakterlerle imzayı bozuyor; bu yüzden
 > executable ASCII (`UyapDokumanEditoru`) tutulur, görünen ad sonradan Türkçe yapılır.
 
