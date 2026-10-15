@@ -50,6 +50,7 @@ PDFFRESH_SRC="$SCRIPT_DIR/macos-pdffresh" # PDF dışa aktarımı canlı belgede
 LINESPACING_SRC="$SCRIPT_DIR/macos-linespacing" # native satır aralığı menüsüne 1.5 ekleyen yama
 IMGFIX_SRC="$SCRIPT_DIR/macos-imagefix" # okunamayan görselde uyarı + eklenen görseli sayfaya sığdırma
 BUFREAD_SRC="$SCRIPT_DIR/macos-bufread" # belge bayt önbelleği (common.ac) tamponlu okuma — büyük UDF açılış donması
+ZEMBEREK_SRC="$SCRIPT_DIR/macos-zemberek" # yazım denetimi kapalıyken Zemberek sözlüğünü açılışta yükleme
 FOP_SUP="/System/Library/Fonts/Supplemental"   # macOS Arial/Times New Roman (tam Unicode)
 ICONS="${ICONS:-1}"           # 1=açık (varsayılan; modern ikon override + HiDPI yükleyici yaması) | 0=kapalı
 FOPFONTS="${FOPFONTS:-1}"     # 1=açık (varsayılan; PDF Türkçe harf düzeltmesi) | 0=kapalı
@@ -68,6 +69,7 @@ PDFFRESH="${PDFFRESH:-1}" # 1=açık (varsayılan; "PDF Olarak Kaydet" canlı be
 LINESPACING="${LINESPACING:-1}" # 1=açık (varsayılan; Giriş>Paragraf satır aralığı menüsüne 1.5 eklenir — satıcı unutmuş) | 0=kapalı
 IMGFIX="${IMGFIX:-1}" # 1=açık (varsayılan; okunamayan görselde Türkçe uyarı + eklenen görsel sayfaya sığar) | 0=kapalı
 BUFREAD="${BUFREAD:-1}" # 1=açık (varsayılan; büyük UDF açılışında bayt-bayt okuma donması giderilir) | 0=kapalı
+ZEMBEREKLAZY="${ZEMBEREKLAZY:-1}" # 1=açık (varsayılan; Kelime Denetimi kapalıyken açılışta ~0,4 s Zemberek yüklemesi atlanır + sağ tık önerisi paylaşılan sözlüğü kullanır) | 0=kapalı
 
 APP_NAME="Uyap Doküman Editörü"     # görünen ad
 APP="$BUILD/$APP_NAME.app"
@@ -963,6 +965,32 @@ apply_skin() {  # $1=JAR — patch_jar içinden çağrılır
 	c_ok "[skin] FlatUdeSkin kuruldu (düz painter)."
 }
 
+apply_zemberek() {  # $1=JAR — patch_jar içinden çağrılır (PLAINPASTE'ten SONRA; ikisi de text.fK yazar)
+	local JAR="$1"
+	[ "$ZEMBEREKLAZY" = "1" ] || return 0
+	c_info "[zemberek] yazım denetimi kapalıyken açılışta sözlük yüklememe yaması…"
+	local jr jc jvs
+	jr="$(java17)"  || { c_warn "[zemberek] 17+ java yok, yama atlandı."; return 0; }
+	jc="$(javac17)" || { c_warn "[zemberek] 17+ javac yok, yama atlandı."; return 0; }
+	jvs="$(icon_deps)"   # Javassist (ortak)
+	rm -rf "$BUILD/_zemberekpatch"; mkdir -p "$BUILD/_zemberekpatch/out"
+	"$jc" --release 11 -cp "$jvs" -d "$BUILD/_zemberekpatch" "$ZEMBEREK_SRC/ZemberekLazyPatch.java" \
+		|| { c_warn "[zemberek] ZemberekLazyPatch derlenemedi; yama atlandı."; return 0; }
+	"$jr" -cp "$BUILD/_zemberekpatch:$jvs" ZemberekLazyPatch "$JAR" "$BUILD/_zemberekpatch/out" \
+		|| die "[zemberek] Zemberek tembel yükleme yaması uygulanamadı (UDE sürümü değişmiş olabilir)."
+	# fk.class/fK.class harf-duyarsız FS'te çakışır → patcher ayrı alt ağaçlara yazar
+	local d n=0
+	for d in "$BUILD/_zemberekpatch/out"/*/; do
+		[ -d "$d/tr" ] || continue
+		( cd "$d" && zip -q -r "$JAR" tr ); n=$((n+1))
+	done
+	if [ "$n" -gt 0 ]; then
+		c_ok "[zemberek] Zemberek tembel yükleme yaması uygulandı ($n sınıf)."
+	else
+		c_ok "[zemberek] zaten yamalı, atlandı."
+	fi
+}
+
 patch_jar() {
 	local JAR="$SRC_APP_DIR/app/Contents/Java/editor-app.jar"
 	[ -s "$JAR" ] || die "Önce 'download' çalıştır."
@@ -988,6 +1016,7 @@ patch_jar() {
 	apply_pasteimage "$JAR"
 	apply_pasterich "$JAR"
 	apply_plainpaste "$JAR"
+	apply_zemberek "$JAR"
 	apply_imgresize "$JAR"
 	apply_livetoggle "$JAR"
 	apply_antet "$JAR"
@@ -1200,6 +1229,7 @@ case "${1:-all}" in
 	download) download ;; deps) deps ;; icon-deps) icon_deps ;; shim) shim ;; textkeys) textkeys ;; zoom) zoom ;; lookagent) lookagent ;; patch) patch_jar ;;
 	fop-fonts) apply_fop_fonts "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	caret-fix) CARETFIX=1 apply_caretfix "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
+	zemberek-lazy) ZEMBEREKLAZY=1 apply_zemberek "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	buf-read) BUFREAD=1 apply_bufread "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	pdf-fresh) PDFFRESH=1 apply_pdffresh "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
 	line-spacing) LINESPACING=1 apply_linespacing "$SRC_APP_DIR/app/Contents/Java/editor-app.jar" ;;
