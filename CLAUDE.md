@@ -1060,6 +1060,33 @@ Java tarafında bayt-bayt (`BufferedInputStream.read()` çağrısı) — 40 MB't
 gerekirse gövde toplu okumayla değiştirilebilir. Büyük belge yüklemesinin asıl kalan
 maliyeti XML ayrıştırma (`common.d.u.a`), bu yamanın kapsamı dışı.
 
+## Kelime Denetimi kapalıyken Zemberek yüklenmez (ZEMBEREKLAZY=1, 2026-10)
+
+Açılış profili: belge kurulumunda EDT'de çalışan `text.fk.run()` yazım denetimi
+dinleyicisini takmadan önce `if (im.a() != null && "true".equals(new im().a()))` sınar —
+statik getter `im.a():Zemberek` ÖNCE çalışıp `new Zemberek(new TurkiyeTurkcesi())`
+kurar → `initValues/SpellCheck=false` iken bile sözlük yüklenir (Zulu 11: ~380 ms EDT,
+~8 MB kalıcı yığın; boş belge açılışında 'args =' → 'zoom ratio' arası EDT örneklerinin
+~%17'si). `scripts/macos-zemberek/ZemberekLazyPatch.java` (`apply_zemberek`,
+PLAINPASTE'ten SONRA — ikisi de `fK` yazar): fk.run'daki o çağrı yeri yalnız tercih
+"true" iken getter'ı çağırır, değilse null (kısa devre, dinleyici takılmaz = stok
+"kapalı" davranışı). Tercih im'in KENDİ `a():String` okuyucusundan. Sonradan açma yolları
+(LIVETOGGLE `zemberekReady()`, `text.dE` işçisi) getter'ı kendileri tembel çağırır.
+İkinci kısım: sağ tık önerisi (`text.fK`) her tıkta `new Zemberek(...)` kuruyordu
+(~0,37 s + 8 MB) → paylaşılan `im.a()` örneği; null ise orijinal kurulum yedek.
+- **KRİTİK Javassist tuzağı — `im`'de ÜÇ argümansız `a()`** (static Zemberek, static
+  void = önbelleği SİLER, instance String). Kaynak derleyici dönüş tipine bakmaz:
+  `$proceed($$)` bile instance `a():String`'e çözüldü ("a is not static"). Çözüm: hedef
+  sınıfa Bytecode API ile TAM tanımlayıcılı özel statik yardımcılar (`zlazy$pref`,
+  `zlazy$shared`) eklenir, kaynak dizgi yalnız onları çağırır.
+- **Harf-duyarsız FS ikinci kez:** patcher `fk.class` ve `fK.class`'ı aynı out dizinine
+  yazınca biri ötekini EZDİ → ayrı alt ağaçlar (`out/fk/`, `out/fK_/`), build.sh her
+  birini ayrı zip'ler.
+- İdempotans: fk.run `Boolean.parseBoolean` çağırıyorsa / fK'de `zlazy$shared` varsa
+  atlanır (fK'nin yedek `new Zemberek`'i kaldığından NewExpr sayımı guard OLAMAZ).
+- Öneri artık `dE`'nin (`kelimeDenetle`) kullandığı AYNI statik örneği kullanır; satıcı
+  tasarımı zaten tek paylaşılan örnek (`im.a()`), fK'nin her tıkta yenisini kurması istisnaydı.
+
 ## "Resim Ekle" sessiz başarısızlığı + sayfayı taşan görsel (IMGFIX=1, 2026-08)
 
 Kullanıcı şikâyeti: "resim ekle dediğimde seçtiğim resmi eklemiyor" — dosya seçiliyor,
