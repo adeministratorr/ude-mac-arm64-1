@@ -346,8 +346,14 @@ download() {
 	# diyebilir — bu sapma değildir.
 	case "$pkg_ver" in
 		"${lv:-$pkg_ver}"*) ;;
-		*) c_warn "Paketlenen UDE sürümü ($pkg_ver), satıcının bildirdiği güncel sürümden (${lv:-?}) FARKLI."
-		   c_warn "  Önbelleği temizleyip yeniden deneyin:  rm -f \"$UDE_ZIP\"" ;;
+		*) if ver_gt "$pkg_ver" "$lv"; then
+			   # Satıcının indirme sayfası güncelleme uç noktasından ÖNCE yenilenebiliyor
+			   # (5.4.21 sayfada / 5.4.20 uç noktada) — paket daha yeni, sorun yok.
+			   c_info "Paketlenen UDE sürümü ($pkg_ver), satıcının güncelleme uç noktasından ($lv) daha yeni; sorun değil."
+		   else
+			   c_warn "Paketlenen UDE sürümü ($pkg_ver), satıcının bildirdiği güncel sürümden (${lv:-?}) ESKİ."
+			   c_warn "  Önbelleği temizleyip yeniden deneyin:  rm -f \"$UDE_ZIP\""
+		   fi ;;
 	esac
 }
 
@@ -404,6 +410,13 @@ shim() {
 	c_ok "eawt-shim derlendi ($(find "$BUILD/_shim" -name '*.class' | wc -l | tr -d ' ') sınıf)"
 }
 
+# ver_gt A B: A sürümü B'den büyükse 0 (nokta ayrımlı sayısal karşılaştırma).
+ver_gt() {
+	[ -n "${1:-}" ] && [ -n "${2:-}" ] || return 1
+	awk -v a="$1" -v b="$2" 'BEGIN{n=split(a,x,".");m=split(b,y,".");k=(n>m?n:m);
+		for(i=1;i<=k;i++){p=x[i]+0;q=y[i]+0;if(p>q)exit 0;if(p<q)exit 1}exit 1}'
+}
+
 textkeys() {
 	c_info "macOS metin kısayolları javaagent'ı derleniyor (Option+Delete vb.)…"
 	local jc; jc="$(javac17)" || die "Derleyici (jpackage JDK) yok → scripts/build.sh jpackage-jdk"
@@ -419,9 +432,34 @@ textkeys() {
 	# diskteki EN YENİ SDK'yı seçiyor (ör. güncel CLT'nin macOS 27 SDK'sı); Xcode'un daha
 	# eski linker'ı o SDK'nın tbd hedeflerini (arm64e.x1) tanımayıp "unknown architecture"
 	# ile düşüyor (CLT/Xcode sürüm kayması, 2026-09). xcrun --sdk macosx eşleşen SDK'yı verir.
-	local sdk; sdk="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null)"
-	clang -dynamiclib ${sdk:+-isysroot "$sdk"} -framework Cocoa -o "$BUILD/_textkeys/libnativedialogkeys.dylib" \
-		"$TEXTKEYS_SRC/native/NativeDialogKeys.m" || die "NativeDialogKeys derlenemedi."
+	# Sonra yedekler: bazı kullanıcılarda CLT YARIM kurulu/bozuk (MacOSX.sdk içinde
+	# Foundation/NSCoder.h yok → "file not found", 2026-10). Diğer kurulu SDK'lar
+	# (en yeniden eskiye) ve en son -isysroot'suz clang denenir; ilk başarılı kazanır.
+	local out="$BUILD/_textkeys/libnativedialogkeys.dylib" src="$TEXTKEYS_SRC/native/NativeDialogKeys.m"
+	local first; first="$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || true)"
+	local cands=() seen=" " c r log="$BUILD/_textkeys/clang.log"
+	for c in "$first" \
+		$(ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX*.sdk 2>/dev/null | sort -r) \
+		$(ls -d "$(xcode-select -p 2>/dev/null)"/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk 2>/dev/null | sort -r); do
+		[ -n "$c" ] && [ -d "$c" ] || continue
+		r="$(cd "$c" 2>/dev/null && pwd -P)" || continue
+		case "$seen" in *" $r "*) continue ;; esac
+		seen="$seen$r "; cands+=("$c")
+	done
+	local ok=""
+	for c in ${cands[@]+"${cands[@]}"} ""; do
+		if clang -dynamiclib ${c:+-isysroot "$c"} -framework Cocoa -o "$out" "$src" >"$log" 2>&1; then
+			ok=1; [ "$c" = "$first" ] || c_warn "Varsayılan SDK ile derlenemedi; yedek kullanıldı: ${c:-clang varsayılanı}"
+			break
+		fi
+		c_warn "SDK başarısız: ${c:-clang varsayılanı}"
+	done
+	if [ -z "$ok" ]; then
+		cat "$log" >&2
+		c_warn "Command Line Tools kurulumu bozuk görünüyor (SDK başlık dosyaları eksik). Onarmak için:"
+		c_warn "  sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install"
+		die "NativeDialogKeys derlenemedi."
+	fi
 	c_ok "libnativedialogkeys.dylib derlendi"
 }
 

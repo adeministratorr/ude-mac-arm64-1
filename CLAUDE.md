@@ -1254,6 +1254,10 @@ Test: `tests/AgentLogTest.java` (javac+java elle; başlıkta komutlar).
   ld'si (1267) yeni tbd hedefini tanımaz. Boş Cocoa programı bile linklenmez (teşhis
   probu). Çözüm `textkeys()`: `-isysroot "$(xcrun --sdk macosx --show-sdk-path)"` →
   seçili araç setiyle EŞLEŞEN SDK. 5.4.21 ile ilgisi yok (Java yamaları geçmişti).
+  **Bozuk/yarım CLT (2026-10, kullanıcı raporu):** `MacOSX.sdk` içinde
+  `Foundation/NSCoder.h` yok → "file not found". `textkeys()` artık önce xcrun SDK'sını,
+  düşerse diğer kurulu SDK'ları (CLT + Xcode, en yeniden eskiye, realpath tekilleştirmeli)
+  ve en son `-isysroot`'suz clang'ı dener; hepsi düşerse CLT yeniden kurulum komutunu basar.
 - jpackage `-javaagent` satırı jar yoksa JVM'i HİÇ başlatmaz → agent opsiyonelse
   java-options koşullu eklenir (`lookopts` deseni).
 - **Gömülecek runtime OpenJDK derlemesi OLMALI (issue #7):** Oracle JDK 11 (aarch64)
