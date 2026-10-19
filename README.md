@@ -1,3 +1,36 @@
+# UDE (Uyap Doküman Editörü) — macOS Apple Silicon (M1/M2/M3/M4) Kurulumu (arm64)
+
+Uyap Doküman Editörü'nü (UDE) **MacBook, MacBook Pro, MacBook Air, Mac mini ve iMac**'de Rosetta olmadan native çalıştırın: Apple Silicon (M serisi, ARM tabanlı işlemci) için arm64 `.app`; gömülü Java 11 — ayrı Java kurulumu gerekmez, `.udf` dosyaları çift tıklamayla açılır, **daha hızlı** ve Retina'da **keskin** çalışır.
+
+**Kimler için:** UYAP evrakı hazırlayan avukatlar, bilirkişiler, arabulucular; dava dilekçesi, tutanak, rapor ve her türlü `.udf` belgesini yazan tüm UYAP kullanıcıları.
+
+## Kimler için?
+- **Avukatlar:** Dava ve cevap dilekçelerini `.udf` olarak hazırlayanlar — "Mac'te UYAP Editör açılmıyor / bulanık" sorununu çözer.
+- **Bilirkişiler ve arabulucular:** Rapor ve tutanak yazanlar.
+- **İcra müdürlükleri ve kamu çalışanları:** UYAP evrakı üreten kullanıcılar.
+- **Hukuk büroları:** MacBook (M1/M2/M3/M4) ve iMac ile UYAP evrak hazırlığı yapanlar.
+
+## "Mac'te UYAP açılmıyor" arayanlar için kısa cevaplar
+- **Resmî UDE Mac'te neden yavaş/bulanık?** Resmî paket Intel (x86_64) ve Rosetta ile çalışır; Java 8 Swing Retina'da bulanık render eder. Bu derleme native arm64 + Java 11'dir → daha hızlı açılır, metin keskindir.
+- **MacBook / MacBook Pro / MacBook Air / iMac / Mac mini'de çalışır mı?** Evet — Apple Silicon (M1/M2/M3/M4). Intel Mac'ler için mimari otomatik algılanır (aşağıda).
+- **Java kurmam gerekir mi?** Hayır; Java uygulamaya gömülüdür.
+- **e-imza çalışır mı?** Evet — akıllı kart okuyucu algılaması düzeltildi; imzalama akışı çalışıyor (arm64 AKİS sürücüsü gerekir).
+- **`.udf` çift tıklama çalışır mı?** Evet; UDE `.udf` ilişkilendirmesiyle kurulur.
+
+## Kurulum (3 yol)
+1. **Tek satır (kaynaktan derler):** aşağıdaki "Kolay kurulum" bölümü.
+2. **Homebrew cask (hazır DMG, derleme beklemez):**
+
+```bash
+brew install --cask adeministratorr/tap/ude-mac-arm64
+```
+
+3. **Hazır DMG:** [Releases](../../releases) → `UdeMacArm64-arm64-*.dmg`
+
+Diğer araçlar (aynı tap): [e-Devlet E-İmza](https://github.com/adeministratorr/edevlet-eimza-mac-arm64) · [PTT KEP Webmail](https://github.com/adeministratorr/pttkep-eimza-mac-arm64) · [PTT UETS / e-Tebligat](https://github.com/adeministratorr/uets-eimza-mac-arm64) · [TNB Teknoloji İmza](https://github.com/adeministratorr/tnb-eimza-mac-arm64) · [UHAP İmzalama](https://github.com/adeministratorr/uhap-eimza-mac-arm64) · [UDF QuickLook](https://github.com/adeministratorr/udf-quicklook-extension)
+
+---
+
 # UDE — Apple Silicon (arm64) Native
 
 [Uyap Doküman Editörü](https://uyap.gov.tr)'nü (UDE) Apple Silicon (M1/M2/M3/M4)
@@ -45,10 +78,18 @@ görünümü ve koyu mod).
 
 > Aç/Kaydet pencereleri artık macOS'un native dosya seçicisi.
 
-> 📦 **Hazır (paketlenmiş) uygulama dağıtılmaz.** İşgüzarlarla uğraşmak istemediğim
-> için paketlenmiş hâlini dağıtmıyorum; uygulamayı **kendiniz derleyip paketlersiniz**.
-> Bu sayfada bir "Releases" / hazır indirme bağlantısı **bulmazsınız**. Aşağıdaki adımlar
-> derlemeyi olabildiğince kolaylaştırır — komutları kopyala-yapıştır ile çalıştırmanız yeterli.
+> 📦 **Hazır paket bu sürümde var:** İster yukarıdaki tek satırla kaynaktan derleyin,
+> ister hazır arm64 DMG'yi kullanın: [Releases](../../releases) → `UdeMacArm64-arm64-*.dmg`,
+> ya da Homebrew ile: `brew install --cask adeministratorr/tap/ude-mac-arm64`.
+> Orijinal upstream depo hazır paket dağıtmaz; bu dağıtım sürümü kurulumu kolaylaştırmak
+> için hazır paket de sunar.
+
+## Neden Mac'te çalışmıyordu? Nasıl çözdük?
+
+- **Sorun:** Resmî UYAP Doküman Editörü paketi Mac'te Rosetta ile çalışıyordu: açılış yavaş, metin bulanık; e-imza kartı, dikte, pano ve Türkçe PDF harfleri gibi birçok akış bozuktu.
+- **Neden:** Resmî paket Intel (x86_64) + Java 8 tabanlıydı; eski `com.apple.eawt` API'si Java 11'de kaldırıldı; `sqlite-jdbc 3.7.2`'nin arm64 native'i yoktu; gömülü Java, macOS'ta PCSC kart kütüphanesini varsayılan yolda bulamıyordu.
+- **Çözüm:** Native arm64 launcher + gömülü **Java 11** (Retina keskinlik), `eawt-shim` (dosya çift-tık davranışı), `sqlite-jdbc 3.46` sürümüne geçiş, PCSC yolunun `Info.plist` → `LSEnvironment` ile uygulamaya gömülmesi ve 20+ iyileştirme (modern ikonlar, native macOS dosya pencereleri, Türkçe PDF fontları, dikte/pano yamaları…). Ayrıntılar aşağıdaki teknik bölümde.
+- **Doğrulama:** Akıllı kart okuyucu algılaması + e-imza akışı ve belge açma/düzenleme uçtan uca çalışıyor.
 
 ---
 
@@ -373,7 +414,8 @@ UDE_URL="https://rayp.adalet.gov.tr/.../yeni-paket.zip" make all
 `.github/workflows/release.yml` (elle tetiklenir): macOS arm64 runner'da `make all`
 çalıştırır ve `.app`'i imzayı bozmadan zip'ler. Sürüm, UDE sürümünden türetilir:
 `<ude_surumu>_<N>` (ör. `5.4.17_1`). Bu yalnızca derlemenin doğrulanması/kişisel kullanım
-içindir; bu depo **hazır paket dağıtmaz** (bkz. en üstteki not).
+içindir; bu dağıtım sürümü ayrıca hazır DMG + Homebrew cask sunar (bkz. en üstteki not);
+orijinal upstream depo hazır paket dağıtmaz.
 
 > Not: CI yalnızca arm64 runner kullanır; Intel (x86_64) build'i yerelde bir Intel Mac'te
 > (`bash kur.sh` veya `make all`) üretilir. İstenirse `macos-13` Intel runner ile ayrı bir
