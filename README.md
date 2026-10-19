@@ -170,6 +170,8 @@ gerekir. TÜBİTAK BİLGEM AKİS — Destek/İndirme sayfasından
 İndirilen `.pkg`'a çift tıklayıp kurulumu tamamlayın (yönetici şifresi ister). Mac'inizin
 mimarisine **uymayan** paketi seçmeyin.
 
+> **macOS 28 / Rosetta uyarısı:** Sistemde eski **Intel** AKİS paketi kuruluysa macOS, `/Applications/Akia.app` için "bu uygulama gelecek macOS sürümünde açılmayacak" uyarısı gösterir (Rosetta desteği macOS 28'de kaldırılıyor). TÜBİTAK'ın **Arm (Apple Silicon)** paketini kurduysanız yeni sürüm `Akia ARM.app` (arm64) olarak gelir; eski `/Applications/Akia.app`'i Finder'da Çöp'e sürükleyip kaldırın. Bu uyarı imzalama akışını etkilemez — kart erişimi yukarıdaki `libakisp11.dylib` üzerinden yürür.
+
 ### ⌨️ Klavye kısayolları
 
 Bu derlemede kısayollar Mac'e uyarlanmıştır (kalın `⌘B`, kaydet `⌘S`, hizalama
