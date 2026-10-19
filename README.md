@@ -1,6 +1,19 @@
-# UDE (Uyap Doküman Editörü) — macOS Apple Silicon (M1/M2/M3/M4) Kurulumu (arm64)
+# UDE (Uyap Doküman Editörü) — macOS Apple Silicon kurulumu
 
-Uyap Doküman Editörü'nü (UDE) **MacBook, MacBook Pro, MacBook Air, Mac mini ve iMac**'de Rosetta olmadan native çalıştırın: Apple Silicon (M serisi, ARM tabanlı işlemci) için arm64 `.app`; gömülü Java 11 — ayrı Java kurulumu gerekmez, `.udf` dosyaları çift tıklamayla açılır, **daha hızlı** ve Retina'da **keskin** çalışır.
+> **Kısa yanıt:** UYAP Doküman Editörü'nü **MacBook, MacBook Pro, MacBook Air, Mac mini ve iMac**'de (Apple Silicon / M serisi / ARM tabanlı işlemci) Rosetta olmadan, hızlı ve Retina'da keskin çalıştırmak istiyorsanız bu depo gayriresmî bir arm64 derleme sunar: gömülü Java 11, `.udf` çift tıklama, e-imza ve Türkçe PDF harf düzeltmeleri. **Resmî kurum uygulaması değildir.**
+>
+> **Önce resmî sürümü deneyin:** UYAP'ın resmî [Doküman Editörü 5.4.21+](https://www.uyap.gov.tr/Uyap-Editor) sürümünde Apple Silicon (ARM64) paketi yayımlandı. Resmî paketle işiniz yürüyorsa onu kullanın; bu derleme, resmî pakette karşılaşılan sorunlar ve ek düzeltmeler için alternatiftir.
+
+## İlk kez kuranlar için
+
+1. **Önce resmî paket:** [uyap.gov.tr/Uyap-Editor](https://www.uyap.gov.tr/Uyap-Editor) → Apple Silicon (ARM64) sürümü. Kurulum ve imza burada çalışıyorsa ek araç gerekmez.
+2. **Bu derleme:** [Releases](../../releases) → `UdeMacArm64-arm64-*.dmg` (en hızlı) veya `brew install --cask adeministratorr/tap/ude-mac-arm64`.
+3. **Kart sürücüsü:** İmzalama için arm64 AKİS sürücüsü gerekir: [akiskart.bilgem.tubitak.gov.tr/destek](https://akiskart.bilgem.tubitak.gov.tr/tr/destek/) → "Mac OS Arm (Apple Silicon)". Kontrol: `lipo -archs /usr/local/lib/libakisp11.dylib` → `arm64`.
+4. **Başarılı kurulum:** `.udf` dosyası çift tıklamayla açılır; imzalama akışında kart ve PIN penceresi görünür.
+5. **Sık hata:** "Akıllı Kart Bulunamadı" → arm64 sürücü eksik. "Geliştirici doğrulanamadı" → DMG notarize olduğu için normal açılır; kaynaktan derlemede sağ tık → **Aç**.
+6. **Önemli sınır:** Build, resmî UDE paketini uyap.gov.tr'den indirip yamalar; resmî paket değişince yama güncellenmeyebilir. İmza PIN'inizi hiçbir komuta/issue'ya yazmayın.
+
+> **Güvenlik notu:** Bu depo kaynak kod içermez; yalnızca yama/build betikleri barındırır. DMG sürümü Developer ID ile imzalı ve Apple notarizasyonundan geçmiştir; kaynaktan derleme (`kur.sh` / `make sign`) ad-hoc imzalıdır. Betiği çalıştırmadan önce inceleyin.
 
 **Kimler için:** UYAP evrakı hazırlayan avukatlar, bilirkişiler, arabulucular; dava dilekçesi, tutanak, rapor ve her türlü `.udf` belgesini yazan tüm UYAP kullanıcıları.
 
@@ -11,27 +24,27 @@ Uyap Doküman Editörü'nü (UDE) **MacBook, MacBook Pro, MacBook Air, Mac mini 
 - **Hukuk büroları:** MacBook (M1/M2/M3/M4) ve iMac ile UYAP evrak hazırlığı yapanlar.
 
 ## "Mac'te UYAP açılmıyor" arayanlar için kısa cevaplar
-- **Resmî UDE Mac'te neden yavaş/bulanık?** Resmî paket Intel (x86_64) ve Rosetta ile çalışır; Java 8 Swing Retina'da bulanık render eder. Bu derleme native arm64 + Java 11'dir → daha hızlı açılır, metin keskindir.
+- **Resmî UDE Mac'te neden yavaş/bulanık?** Resmî paketin eski sürümleri Intel (x86_64) + Java 8 + Rosetta ile çalışıyordu; Java 8 Swing Retina'da bulanık render ediyordu. 5.4.21+ sürümünde Apple Silicon paketi de yayımlandı; onu da deneyebilirsiniz. Bu derleme native arm64 + Java 11'dir; ayrıca e-imza, Türkçe PDF harfleri ve Mac kısayolları düzeltmelerini içerir.
 - **MacBook / MacBook Pro / MacBook Air / iMac / Mac mini'de çalışır mı?** Evet — Apple Silicon (M1/M2/M3/M4). Intel Mac'ler için mimari otomatik algılanır (aşağıda).
 - **Java kurmam gerekir mi?** Hayır; Java uygulamaya gömülüdür.
 - **e-imza çalışır mı?** Evet — akıllı kart okuyucu algılaması düzeltildi; imzalama akışı çalışıyor (arm64 AKİS sürücüsü gerekir).
 - **`.udf` çift tıklama çalışır mı?** Evet; UDE `.udf` ilişkilendirmesiyle kurulur.
 
 ## Kurulum (3 yol)
-1. **Tek satır (kaynaktan derler):** aşağıdaki "Kolay kurulum" bölümü.
+1. **Hazır DMG (en hızlı):** [Releases](../../releases) → `UdeMacArm64-arm64-*.dmg`.
 2. **Homebrew cask (hazır DMG, derleme beklemez):**
 
 ```bash
 brew install --cask adeministratorr/tap/ude-mac-arm64
 ```
 
-3. **Hazır DMG:** [Releases](../../releases) → `UdeMacArm64-arm64-*.dmg`
+3. **Tek satır (kaynaktan derler; betiği önce inceleyin):** aşağıdaki "Kolay kurulum" bölümü.
 
 Diğer araçlar (aynı tap): [e-Devlet E-İmza](https://github.com/adeministratorr/edevlet-eimza-mac-arm64) · [PTT KEP Webmail](https://github.com/adeministratorr/pttkep-eimza-mac-arm64) · [PTT UETS / e-Tebligat](https://github.com/adeministratorr/uets-eimza-mac-arm64) · [TNB Teknoloji İmza](https://github.com/adeministratorr/tnb-eimza-mac-arm64) · [UHAP İmzalama](https://github.com/adeministratorr/uhap-eimza-mac-arm64) · [UDF QuickLook](https://github.com/adeministratorr/udf-quicklook-extension)
 
 ---
 
-# UDE — Apple Silicon (arm64) Native
+## UDE — Apple Silicon (arm64) Native
 
 [Uyap Doküman Editörü](https://uyap.gov.tr)'nü (UDE) Apple Silicon (M1/M2/M3/M4)
 Mac'lerde **Rosetta olmadan** native çalıştırır. Rosetta çeviri katmanı olmadığı için
@@ -398,7 +411,7 @@ make deps        # sqlite-jdbc indir + host mimarisi dylib doğrula
 make shim        # eawt-shim derle (Java 11 com.apple.eawt yerine)
 make patch       # editor-app.jar yamala (sqlite swap + eawt çıkar)
 make package     # jpackage ile .app üret (Java 11 + shim, .udf ilişkilendirmeli)
-make sign        # ad-hoc codesign
+make sign        # ad-hoc codesign (kaynak derleme; DMG release'leri Developer ID + notarize)
 make clean / distclean
 ```
 
