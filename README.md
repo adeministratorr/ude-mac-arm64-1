@@ -106,7 +106,7 @@ görünümü ve koyu mod).
 
 ---
 
-# 👩‍⚖️ Kolay kurulum — tek satır
+## 👩‍⚖️ Kolay kurulum — tek satır
 
 Programcı olmanıza gerek yok. **Terminal** uygulamasını açın (klavyede
 `Command (⌘) + Boşluk`'a basıp açılan kutuya **Terminal** yazın ve **Enter**'a basın),
@@ -192,7 +192,7 @@ Bu derlemede kısayollar Mac'e uyarlanmıştır (kalın `⌘B`, kaydet `⌘S`, h
 
 ---
 
-# 🛠️ Mühendisler için — Teknik ayrıntı
+## 🛠️ Mühendisler için — Teknik ayrıntı
 
 Yukarıdaki adımlar derlemek için yeterlidir. Bu bölüm, dönüşümün **neyi nasıl** çözdüğünü
 ve tek tek build hedeflerini açıklar.
