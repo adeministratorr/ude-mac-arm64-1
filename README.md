@@ -100,7 +100,7 @@ Programcı olmanıza gerek yok. **Terminal** uygulamasını açın (klavyede
 ardından aşağıdaki **tek satırı** kopyalayıp yapıştırın ve **Enter**'a basın:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/saidsurucu/ude-mac-arm64/main/kur.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/adeministratorr/ude-mac-arm64-1/main/kur.sh)"
 ```
 
 > Terminal'iniz Rosetta (x86_64) modunda açılmışsa betik bunu algılayıp kendini
@@ -131,7 +131,7 @@ Yukarıdaki komut varsayılan olarak **modern düz görünümü** (10. maddede a
 Eski turkuaz arayüzü tercih ediyorsanız, aynı satırın başına `SKIN=0 ` ekleyin:
 
 ```bash
-SKIN=0 arch -arm64 bash -c "$(curl -fsSL https://raw.githubusercontent.com/saidsurucu/ude-mac-arm64/main/kur.sh)"
+SKIN=0 arch -arm64 bash -c "$(curl -fsSL https://raw.githubusercontent.com/adeministratorr/ude-mac-arm64-1/main/kur.sh)"
 ```
 
 Depoyu zaten indirdiyseniz, klasörün içinde `./kur.sh --klasik` de aynı işi yapar.
@@ -142,7 +142,7 @@ Mac'iniz Intel (x86_64) işlemcili ise — yani Apple Silicon (M1/M2/M3/M4) **de
 aynı kurulumu **birebir aynı tek satırla** yapın (mimariyi betik kendisi algılar):
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/saidsurucu/ude-mac-arm64/main/kur.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/adeministratorr/ude-mac-arm64-1/main/kur.sh)"
 ```
 
 > Mimarinizden emin değil misiniz? Sol üstteki **Apple () menüsü → Bu Mac Hakkında**'ya

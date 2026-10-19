@@ -8,21 +8,21 @@
 #
 # İki şekilde çalışır:
 #   • İnternetten tek satırla (Apple Silicon ve Intel, aynı komut):
-#       bash -c "$(curl -fsSL https://raw.githubusercontent.com/saidsurucu/ude-mac-arm64/main/kur.sh)"
+#       bash -c "$(curl -fsSL https://raw.githubusercontent.com/adeministratorr/ude-mac-arm64-1/main/kur.sh)"
 #     (Terminal Rosetta modundaysa betik kendini arm64 olarak yeniden başlatır)
 #     (kaynak kodu kendisi indirir, derler ve kurar)
 #   • Depoyu zaten indirdiyseniz, klasörün içinde:  ./kur.sh
 #
 # Görünüm seçimi (varsayılan: modern düz görünüm):
 #   • Eski/klasik (turkuaz) arayüz için SKIN=0 ortam değişkenini önden verin:
-#       SKIN=0 arch -arm64 bash -c "$(curl -fsSL https://raw.githubusercontent.com/saidsurucu/ude-mac-arm64/main/kur.sh)"
+#       SKIN=0 arch -arm64 bash -c "$(curl -fsSL https://raw.githubusercontent.com/adeministratorr/ude-mac-arm64-1/main/kur.sh)"
 #   • Depoyu indirdiyseniz aynı şey bayrakla da olur:  ./kur.sh --klasik
 #
 # Asıl derleme mantığı scripts/build.sh içindedir; bu betik onu sarmalar.
 
 set -euo pipefail
 
-REPO_URL="https://github.com/saidsurucu/ude-mac-arm64.git"
+REPO_URL="https://github.com/adeministratorr/ude-mac-arm64-1.git"
 CLONE_DIR="$HOME/ude-mac-arm64"
 
 # ----- Görünüm seçimi: --klasik/--eski bayrağı SKIN=0'a eşdeğerdir -----
