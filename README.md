@@ -1,3 +1,5 @@
+![UYAP Doküman Editörü — Apple Silicon Mac](assets/social-preview.jpg)
+
 # UDE (Uyap Doküman Editörü) — macOS Apple Silicon kurulumu
 
 > **Kısa yanıt:** UYAP Doküman Editörü'nü **MacBook, MacBook Pro, MacBook Air, Mac mini ve iMac**'de (Apple Silicon / M serisi / ARM tabanlı işlemci) Rosetta olmadan, hızlı ve Retina'da keskin çalıştırmak istiyorsanız bu depo gayriresmî bir arm64 derleme sunar: gömülü Java 11, `.udf` çift tıklama, e-imza ve Türkçe PDF harf düzeltmeleri. **Resmî kurum uygulaması değildir.**
