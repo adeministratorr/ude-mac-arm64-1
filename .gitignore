@@ -28,3 +28,5 @@
 
 # fluent ikon SVG cache (yerel)
 /scripts/icons/fluent/cache/
+
+!SECURITY.md
