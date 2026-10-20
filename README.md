@@ -1,10 +1,12 @@
-![UYAP Doküman Editörü — Apple Silicon Mac](assets/social-preview.jpg)
+![Mac’te UYAP Doküman Editörü Açılmıyor mu? — Kurulum ve Düzeltmeler](assets/social-preview.jpg)
 
-# UDE (Uyap Doküman Editörü) — macOS Apple Silicon kurulumu
+# Mac’te UYAP Doküman Editörü Açılmıyor mu? — Kurulum ve Düzeltmeler
 
 > **Kısa yanıt:** UYAP Doküman Editörü'nü **MacBook, MacBook Pro, MacBook Air, Mac mini ve iMac**'de (Apple Silicon / M serisi / ARM tabanlı işlemci) Rosetta olmadan, hızlı ve Retina'da keskin çalıştırmak istiyorsanız bu depo gayriresmî bir arm64 derleme sunar: gömülü Java 11, `.udf` çift tıklama, e-imza ve Türkçe PDF harf düzeltmeleri. **Resmî kurum uygulaması değildir.**
 >
 > **Önce resmî sürümü deneyin:** UYAP'ın resmî [Doküman Editörü 5.4.21+](https://www.uyap.gov.tr/Uyap-Editor) sürümünde Apple Silicon (ARM64) paketi yayımlandı. Resmî paketle işiniz yürüyorsa onu kullanın; bu derleme, resmî pakette karşılaşılan sorunlar ve ek düzeltmeler için alternatiftir.
+
+**Ayrıntılı Türkçe anlatım:** [Mac’te e-imza ve UYAP kurulumu, ilk kullanım ve hata çözümleri](https://ademyuce.tr/macos-eimza-uyap/).
 
 ## İlk kez kuranlar için
 
@@ -31,6 +33,8 @@
 - **Java kurmam gerekir mi?** Hayır; Java uygulamaya gömülüdür.
 - **e-imza çalışır mı?** Evet — akıllı kart okuyucu algılaması düzeltildi; imzalama akışı çalışıyor (arm64 AKİS sürücüsü gerekir).
 - **`.udf` çift tıklama çalışır mı?** Evet; UDE `.udf` ilişkilendirmesiyle kurulur.
+- **UYAP Doküman Editörü Mac’te neden açılmıyor?** Eski sürüm, yanlış işlemci paketi veya bozulmuş tercih dosyaları neden olabilir. İlk adım güncel resmî ARM64 sürümü kurmaktır; siyah ekran sürerse `.uki` tercih dosyalarını **yedekleyerek** sıfırlayın.
+- **UDF dosyasını yalnızca okumak istiyorum, bu paket gerekli mi?** Düzenleme gerekmiyorsa resmî editör veya Finder’da pratik önizleme için [UDF QuickLook](https://github.com/adeministratorr/udf-quicklook-extension) yeterli olabilir.
 
 ## Kurulum (3 yol)
 1. **Hazır DMG (en hızlı):** [Releases](../../releases) → `UdeMacArm64-arm64-*.dmg`.
