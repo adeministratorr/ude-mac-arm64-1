@@ -22,6 +22,9 @@ permissions:
 jobs:
   build:
     runs-on: macos-14   # Apple Silicon (arm64) runner
+    env:
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -39,6 +42,18 @@ jobs:
           UDE_URL: ${{ github.event.inputs.ude_url }}
           ICONS: "1"   # modern Material + Retina ikonlar (scripts/icons/overrides)
         run: make all
+
+      - name: Developer ID imzası uygula
+        if: env.APPLE_API_KEY_ID != ''
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "${{ secrets.APPLE_API_KEY_B64 }}" | openssl base64 -d -A -out "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+          chmod 600 "$HOME/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+          make sign-devid
+
+      - name: Uygulamayı notarize et (submit + wait + staple)
+        if: env.APPLE_API_KEY_ID != ''
+        run: make notarize-app
 
       - name: Sürümü belirle (<ude_surumu>_<N>)
         id: ver
@@ -70,28 +85,47 @@ jobs:
           brew list create-dmg >/dev/null 2>&1 || brew install create-dmg
           make dmg
 
+      - name: DMG'yi notarize et + staple
+        if: env.APPLE_API_KEY_ID != ''
+        env:
+          DMG_FILE: ${{ github.workspace }}/UyapDokumanEditoru-${{ steps.ver.outputs.tag }}-arm64.dmg
+        run: make notarize-dmg
+
+      - name: Sürüm notunu hazırla (sha256 + imza durumu)
+        env:
+          DMG_FILE: ${{ github.workspace }}/UyapDokumanEditoru-${{ steps.ver.outputs.tag }}-arm64.dmg
+          APP_DISPLAY: Uyap Doküman Editörü
+        run: |
+          SHA=$(shasum -a 256 "$DMG_FILE" | awk '{print $1}')
+          if [ "$APPLE_API_KEY_ID" ]; then
+            IMZANOT="✅ DMG Developer ID imzalı ve Apple notarizasyonundan geçmiştir (stapled). Çift tık normal açılır; xattr gerekmez."
+          else
+            IMZANOT="⚠️ Bu build ad-hoc imzalıdır (notarize edilmedi — APPLE_API_KEY_ID secret'ı tanımlı değil). İlk açılışta sağ tık → Aç gerekir."
+          fi
+          cat > release-notes.md <<EOF
+          Native Apple Silicon (arm64) build — Rosetta gerektirmez.
+          Java gömülü gelir; ayrıca kurulum için bir paket gerekmez. .udf dosyalarına çift tıklayıp açabilirsiniz.
+
+          ## Kurulum
+          1. Aşağıdaki .dmg dosyasını indirip çift tıklayın; bir pencere açılır.
+          2. Açılan pencerede $APP_DISPLAY simgesini Applications klasörüne sürükleyin.
+          3. İlk açılışta Gatekeeper sorgusu çıkarsa sağ tık → Aç ile devam edin.
+
+          ## İmza durumu
+          $IMZANOT
+
+          İndirilen dosyanın bütünlüğü için sha256:
+          $SHA
+
+          ## Not
+          - E-imza için sistemde ayrıca arm64 PKCS#11 token middleware (AKİS vb.) kurulu olmalıdır.
+          - ✅ E-imza gerçek kart + arm64 middleware ile test edildi, çalışıyor.
+          EOF
+
       - name: GitHub Release oluştur + dosyayı ekle
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: ${{ steps.ver.outputs.tag }}
           files: UyapDokumanEditoru-${{ steps.ver.outputs.tag }}-arm64.dmg
-          body: |
-            Native Apple Silicon (arm64) UDE build — Rosetta gerektirmez.
-            Java gömülü gelir; ayrıca bir şey kurmaya gerek yok. `.udf` dosyalarına çift tıklayıp açabilirsiniz.
-
-            ## Kurulum
-            1. Aşağıdaki **`.dmg` dosyasını indirip** çift tıklayın; bir pencere açılır.
-            2. Açılan pencerede **`Uyap Doküman Editörü`** simgesini, ortadaki okun gösterdiği gibi
-               yanındaki **Applications** klasörünün üzerine **sürükleyin**.
-            3. İlk açılışta macOS **"geliştirici doğrulanamadı"** diyebilir. Bunu bir kez aşmak için:
-               1. **Terminal** uygulamasını açın: `Command (⌘) + Boşluk`'a basın, **Terminal** yazıp **Enter**'a basın.
-               2. Şu satırı kopyalayın, Terminal'e yapıştırıp **Enter**'a basın:
-                  ```
-                  xattr -dr com.apple.quarantine "/Applications/Uyap Doküman Editörü.app"
-                  ```
-               3. Komut bir şey yazmadan biter (normaldir). Artık uygulamayı çift tıklayarak açabilirsiniz.
-
-            ## Not
-            - E-imza için sistemde ayrıca **arm64 PKCS#11 token middleware** (AKİS vb.) kurulu olmalıdır.
-            - ✅ E-imza gerçek kart + arm64 middleware ile test edildi, çalışıyor.
+          body_path: release-notes.md
