@@ -274,6 +274,11 @@ latest_ude_version() {
 # Bu yüzden arama büyük/küçük harf DUYARSIZ ve Intel paketi elenir.
 resolve_ude_url() {
 	[ -n "$UDE_URL" ] && { echo "$UDE_URL"; return 0; }
+	# CI/çevrimdışı: depoya konulan vendor paketi varsa ağ hiç sorgulanmaz.
+	# (runner'dan www.uyap.gov.tr + rayp.adalet.gov.tr erişimi dönemsel kesiliyor)
+	if [ -s "$ROOT/vendor/ude.zip" ]; then
+		echo "file://$ROOT/vendor/ude.zip"; return 0
+	fi
 	c_info "Güncel MAC paketi çözülüyor: $UDE_DOWNLOAD_PAGE" >&2
 	local links href
 	links="$(curl -fsSL "${CURL_NET[@]}" -m 30 "$UDE_DOWNLOAD_PAGE" 2>/dev/null \
